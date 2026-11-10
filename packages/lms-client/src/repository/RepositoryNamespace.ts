@@ -168,10 +168,23 @@ const repositoryDownloadPlannerResolutionPreferenceSchema = z.discriminatedUnion
 export interface RepositoryDownloadPlannerOpts {
   resolutionPreference?: Array<RepositoryDownloadPlannerResolutionPreference>;
   compatibilityTypes?: Array<ModelCompatibilityType>;
+  /**
+   * HTTP(S) proxy URL to be forwarded to the LM Studio download backend.
+   * The backend must support this field for downloads to actually use the proxy.
+   * @example "http://127.0.0.1:8080"
+   */
+  proxyUrl?: string;
 }
 const repositoryDownloadPlannerOptsSchema = z.object({
   resolutionPreference: z.array(repositoryDownloadPlannerResolutionPreferenceSchema).optional(),
   compatibilityTypes: z.array(modelCompatibilityTypeSchema).optional(),
+  proxyUrl: z.string().url().refine(url => {
+    try {
+      return ["http:", "https:"].includes(new URL(url).protocol);
+    } catch {
+      return false;
+    }
+  }, "Proxy URL must use HTTP or HTTPS").optional(),
 });
 
 type RepositoryDownloadPlannerTarget =
@@ -622,6 +635,7 @@ export class RepositoryNamespace {
         opts: {
           resolutionPreference: opts.resolutionPreference,
           compatibilityTypes: opts.compatibilityTypes,
+          proxyUrl: opts.proxyUrl,
         },
       },
       undefined, // Don't listen to the messages yet.
@@ -679,6 +693,7 @@ export class RepositoryNamespace {
         opts: {
           resolutionPreference: opts.resolutionPreference,
           compatibilityTypes: opts.compatibilityTypes,
+          proxyUrl: opts.proxyUrl,
         },
       },
       undefined,
