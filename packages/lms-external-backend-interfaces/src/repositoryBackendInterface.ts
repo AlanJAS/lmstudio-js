@@ -34,6 +34,14 @@ const repositoryDownloadPlannerResolutionPreferenceSchema = z.discriminatedUnion
 const repositoryDownloadPlannerOptsSchema = z.object({
   resolutionPreference: z.array(repositoryDownloadPlannerResolutionPreferenceSchema).optional(),
   compatibilityTypes: z.array(modelCompatibilityTypeSchema).optional(),
+  // Forwarded to the download backend. Applying it to HTTP requests requires backend support.
+  proxyUrl: z.string().url().refine(url => {
+    try {
+      return ["http:", "https:"].includes(new URL(url).protocol);
+    } catch {
+      return false;
+    }
+  }, "Proxy URL must use HTTP or HTTPS").optional(),
 });
 
 const repositoryDownloadPlannerTargetSchema = z.discriminatedUnion("type", [
